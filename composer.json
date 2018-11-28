@@ -1,0 +1,17 @@
+{
+    "name": "innocode-digital/wp-reset-opcache-aws-elb",
+    "type": "wordpress-mu-plugin",
+    "require": {
+        "php": ">=7.0",
+        "ext-zend-opcache": "*",
+        "composer/installers": "~1.0",
+        "aws/aws-sdk-php": "^3.77",
+        "gordalina/cachetool": "^4.0"
+    },
+    "authors": [
+        {
+            "name": "Viktor Kuliebiakin",
+            "email": "viktor.kuliebiakin@innocode.no"
+        }
+    ]
+}
