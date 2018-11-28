@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AWS ELB OPCache reset
  * Description: Resets OPCache on master and all ELB instances.
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: Innocode
  * Author URI: https://innocode.com
  * Requires at least: 4.9.8
@@ -18,7 +18,7 @@ use Aws\Ec2\Ec2Client;
 use CacheTool\Adapter\FastCGI;
 use CacheTool\CacheTool;
 
-define( 'AWS_ELB_OPCACHE_RESET_VERSION', '0.0.1' );
+define( 'AWS_ELB_OPCACHE_RESET_VERSION', '0.0.2' );
 define( 'AWS_ELB_OPCACHE_RESET', 'aws_elb_opcache_reset' );
 
 if ( !defined( 'AWS_ELB_OPCACHE_RESET_PORT' ) ) {
@@ -30,6 +30,8 @@ if ( !defined( 'AWS_ELB_OPCACHE_RESET_FALLBACK' ) ) {
 }
 
 /**
+ * Checks if necessary constants are set
+ *
  * @return bool
  */
 function is_enabled() {
@@ -40,6 +42,8 @@ function is_enabled() {
 }
 
 /**
+ * Returns ELB
+ *
  * @return mixed|null
  */
 function get_load_balancers() {
@@ -54,6 +58,8 @@ function get_load_balancers() {
 }
 
 /**
+ * Returns ELB instances
+ *
  * @param array $load_balancer
  *
  * @return \Aws\Result
@@ -70,6 +76,8 @@ function get_ec2_load_balancer_instances( $load_balancer ) {
 }
 
 /**
+ * Resets OPCache on instance
+ *
  * @param string $host
  *
  * @return bool
@@ -77,11 +85,13 @@ function get_ec2_load_balancer_instances( $load_balancer ) {
 function reset_instance( $host ) {
     $adapter = new FastCGI( "$host:" . AWS_ELB_OPCACHE_RESET_PORT );
     $cache = CacheTool::factory( $adapter );
-    
+
     return $cache->opcache_reset();
 }
 
 /**
+ * Schedules OPCache reset
+ *
  * @param string $host
  * @param int    $delay
  */
@@ -91,8 +101,10 @@ function schedule( $host, $delay = 0 ) {
     ] );
 }
 
+/**
+ * Initializes OPCache reset
+ */
 function reset() {
-    // Reset on master
     opcache_reset();
 
     if ( AWS_ELB_OPCACHE_RESET_FALLBACK ) {
@@ -116,12 +128,18 @@ function reset() {
     }
 }
 
+/**
+ * Adds OPCache flush button to WordPress admin panel
+ */
 function add_flush_button() {
     if ( function_exists( 'mu_add_flush_button' ) && current_user_can( 'manage_options' ) ) {
         mu_add_flush_button( __( 'OPCache' ), 'AWSELBOPCacheReset\reset' );
     }
 }
 
+/**
+ * Loads plugin functionality
+ */
 function load() {
     add_flush_button();
 }
