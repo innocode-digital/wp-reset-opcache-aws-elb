@@ -6,7 +6,7 @@
         "ext-zend-opcache": "*",
         "composer/installers": "~1.0",
         "aws/aws-sdk-php": "^3.77",
-        "gordalina/cachetool": "^4.0"
+        "gordalina/cachetool": "^3.2.1"
     },
     "authors": [
         {
