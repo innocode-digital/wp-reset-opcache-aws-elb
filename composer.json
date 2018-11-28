@@ -13,5 +13,10 @@
             "name": "Viktor Kuliebiakin",
             "email": "viktor.kuliebiakin@innocode.no"
         }
-    ]
+    ],
+    "config": {
+        "platform": {
+            "php": "7.0"
+        }
+    }
 }
