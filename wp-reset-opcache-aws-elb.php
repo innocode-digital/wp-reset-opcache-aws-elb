@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AWS ELB OPCache reset
  * Description: Resets OPCache on master and all ELB instances.
- * Version: 0.0.2
+ * Version: 0.1.0
  * Author: Innocode
  * Author URI: https://innocode.com
  * Requires at least: 4.9.8
@@ -18,7 +18,7 @@ use Aws\Ec2\Ec2Client;
 use CacheTool\Adapter\FastCGI;
 use CacheTool\CacheTool;
 
-define( 'AWS_ELB_OPCACHE_RESET_VERSION', '0.0.2' );
+define( 'AWS_ELB_OPCACHE_RESET_VERSION', '0.1.0' );
 define( 'AWS_ELB_OPCACHE_RESET', 'aws_elb_opcache_reset' );
 
 if ( !defined( 'AWS_ELB_OPCACHE_RESET_PORT' ) ) {
@@ -83,7 +83,8 @@ function get_ec2_load_balancer_instances( $load_balancer ) {
  * @return bool
  */
 function reset_instance( $host ) {
-    $adapter = new FastCGI( "$host:" . AWS_ELB_OPCACHE_RESET_PORT );
+    $chroot = defined( 'AWS_ELB_OPCACHE_RESET_TMP_DIR' ) ? AWS_ELB_OPCACHE_RESET_TMP_DIR : null;
+    $adapter = new FastCGI( "$host:" . AWS_ELB_OPCACHE_RESET_PORT, $chroot );
     $cache = CacheTool::factory( $adapter );
 
     return $cache->opcache_reset();
