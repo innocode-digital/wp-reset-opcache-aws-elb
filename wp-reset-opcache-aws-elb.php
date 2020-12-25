@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AWS ELB OPcache reset
  * Description: Resets OPcache on master and all ELB instances.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: Innocode
  * Author URI: https://innocode.com
  * Requires at least: 4.9.8
