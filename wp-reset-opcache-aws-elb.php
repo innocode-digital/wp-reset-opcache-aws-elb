@@ -34,10 +34,10 @@ if ( ! defined( 'AWS_ELB_OPCACHE_RESET_FALLBACK' ) ) {
  * @return bool
  */
 function is_enabled() {
-    return defined( 'AWS_ELB_OPCACHE_RESET_LOAD_BALANCER' )
-        && defined( 'AWS_ELB_OPCACHE_RESET_REGION' )
-        && function_exists( 'opcache_reset' )
-        && ini_get( 'opcache.enable' );
+    return defined( 'AWS_ELB_OPCACHE_RESET_LOAD_BALANCER' ) &&
+        defined( 'AWS_ELB_OPCACHE_RESET_REGION' ) &&
+        function_exists( 'opcache_reset' ) &&
+        ini_get( 'opcache.enable' );
 }
 
 /**
