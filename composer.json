@@ -1,6 +1,7 @@
 {
     "name": "innocode-digital/wp-reset-opcache-aws-elb",
-    "type": "wordpress-mu-plugin",
+    "version": "0.3.0",
+    "type": "wordpress-muplugin",
     "require": {
         "php": ">=7.0",
         "ext-zend-opcache": "*",
@@ -8,10 +9,15 @@
         "aws/aws-sdk-php": "^3.77",
         "gordalina/cachetool": "^3.0.0"
     },
+    "description": "Resets OPcache on master and all ELB instances.",
     "authors": [
         {
+            "name": "Innocode",
+            "email": "post@innocode.no",
+            "homepage": "https://innocode.com/"
+        }, {
             "name": "Viktor Kuliebiakin",
-            "email": "viktor.kuliebiakin@innocode.no"
+            "email": "kuliebiakin@gmail.com"
         }
     ],
     "config": {

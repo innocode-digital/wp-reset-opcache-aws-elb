@@ -1,31 +1,30 @@
 <?php
 /**
- * Plugin Name: AWS ELB OPCache reset
- * Description: Resets OPCache on master and all ELB instances.
- * Version: 0.2.0
+ * Plugin Name: AWS ELB OPcache reset
+ * Description: Resets OPcache on master and all ELB instances.
+ * Version: 0.3.0
  * Author: Innocode
  * Author URI: https://innocode.com
  * Requires at least: 4.9.8
- * Tested up to: 4.9.8
+ * Tested up to: 5.6
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
-namespace AWSELBOPCacheReset;
+namespace AWSELBOPcacheReset;
 
 use Aws\ElasticLoadBalancing\ElasticLoadBalancingClient;
 use Aws\Ec2\Ec2Client;
 use CacheTool\Adapter\FastCGI;
 use CacheTool\CacheTool;
 
-define( 'AWS_ELB_OPCACHE_RESET_VERSION', '0.2.0' );
 define( 'AWS_ELB_OPCACHE_RESET', 'aws_elb_opcache_reset' );
 
-if ( !defined( 'AWS_ELB_OPCACHE_RESET_PORT' ) ) {
+if ( ! defined( 'AWS_ELB_OPCACHE_RESET_PORT' ) ) {
     define( 'AWS_ELB_OPCACHE_RESET_PORT', 8289 );
 }
 
-if ( !defined( 'AWS_ELB_OPCACHE_RESET_FALLBACK' ) ) {
+if ( ! defined( 'AWS_ELB_OPCACHE_RESET_FALLBACK' ) ) {
     define( 'AWS_ELB_OPCACHE_RESET_FALLBACK', '127.0.0.1' );
 }
 
@@ -47,10 +46,26 @@ function is_enabled() {
  * @return mixed|null
  */
 function get_load_balancers() {
+    if ( ! defined( 'AWS_ELB_OPCACHE_RESET_REGION' ) ) {
+        trigger_error(
+            'Missing required constant AWS_ELB_OPCACHE_RESET_REGION',
+            E_USER_WARNING
+        );
+        return null;
+    }
+
     $elastic_load_balancing = new ElasticLoadBalancingClient( [
         'region'  => AWS_ELB_OPCACHE_RESET_REGION,
         'version' => 'latest',
     ] );
+
+    if ( ! defined( 'AWS_ELB_OPCACHE_RESET_LOAD_BALANCER' ) ) {
+        trigger_error(
+            'Missing required constant AWS_ELB_OPCACHE_RESET_LOAD_BALANCER',
+            E_USER_WARNING
+        );
+        return null;
+    }
 
     return $elastic_load_balancing->describeLoadBalancers( [
         'LoadBalancerNames' => [ AWS_ELB_OPCACHE_RESET_LOAD_BALANCER ], // Currently support one load balancer
@@ -62,9 +77,17 @@ function get_load_balancers() {
  *
  * @param array $load_balancer
  *
- * @return \Aws\Result
+ * @return \Aws\Result|null
  */
 function get_ec2_load_balancer_instances( $load_balancer ) {
+    if ( ! defined( 'AWS_ELB_OPCACHE_RESET_REGION' ) ) {
+        trigger_error(
+            'Missing required constant AWS_ELB_OPCACHE_RESET_REGION',
+            E_USER_WARNING
+        );
+        return null;
+    }
+
     $ec2 = new Ec2Client( [
         'region'  => AWS_ELB_OPCACHE_RESET_REGION,
         'version' => 'latest',
@@ -76,7 +99,7 @@ function get_ec2_load_balancer_instances( $load_balancer ) {
 }
 
 /**
- * Resets OPCache on instance
+ * Resets OPcache on instance
  *
  * @param string $host
  *
@@ -84,14 +107,14 @@ function get_ec2_load_balancer_instances( $load_balancer ) {
  */
 function reset_instance( $host ) {
     $adapter = new FastCGI( "$host:" . AWS_ELB_OPCACHE_RESET_PORT );
-    $tempDir = defined( 'AWS_ELB_OPCACHE_RESET_TMP_DIR' ) ? AWS_ELB_OPCACHE_RESET_TMP_DIR : null;
-    $cache = CacheTool::factory( $adapter, $tempDir );
+    $tmp_dir = defined( 'AWS_ELB_OPCACHE_RESET_TMP_DIR' ) ? AWS_ELB_OPCACHE_RESET_TMP_DIR : null;
+    $cache = CacheTool::factory( $adapter, $tmp_dir );
 
     return $cache->opcache_reset();
 }
 
 /**
- * Schedules OPCache reset
+ * Schedules OPcache reset
  *
  * @param string $host
  * @param int    $delay
@@ -103,7 +126,7 @@ function schedule( $host, $delay = 0 ) {
 }
 
 /**
- * Initializes OPCache reset
+ * Initializes OPcache reset
  */
 function reset() {
     opcache_reset();
@@ -114,15 +137,19 @@ function reset() {
 
     $load_balancers = get_load_balancers();
 
-    if ( !empty( $load_balancers ) && is_array( $load_balancers ) ) {
+    if ( ! empty( $load_balancers ) && is_array( $load_balancers ) ) {
         $x = intval( boolval( AWS_ELB_OPCACHE_RESET_FALLBACK ) );
 
         foreach ( $load_balancers as $load_balancer ) {
             $instances = get_ec2_load_balancer_instances( $load_balancer );
 
-            foreach ( $instances->get( 'Reservations' ) as $i => $reservation ) {
-                foreach ( $reservation['Instances'] as $j => $instance ) {
-                    schedule( $instance['PrivateIpAddress'], ( $i + $j + $x ) * MINUTE_IN_SECONDS );
+            if ( ! empty( $instances ) ) {
+                foreach ( $instances->get( 'Reservations' ) as $i => $reservation ) {
+                    foreach ( $reservation['Instances'] as $j => $instance ) {
+                        if ( isset( $instance['State']['Code'] ) && $instance['State']['Code'] == 16 ) {
+                            schedule( $instance['PrivateIpAddress'], ( $i + $j + $x ) * MINUTE_IN_SECONDS );
+                        }
+                    }
                 }
             }
         }
@@ -130,11 +157,27 @@ function reset() {
 }
 
 /**
- * Adds OPCache flush button to WordPress admin panel
+ * Adds OPcache flush button to WordPress admin panel
  */
 function add_flush_button() {
-    if ( function_exists( 'mu_add_flush_button' ) && current_user_can( 'manage_options' ) ) {
-        mu_add_flush_button( __( 'OPCache' ), 'AWSELBOPCacheReset\reset' );
+    if ( function_exists( 'mu_add_flush_button' ) ) {
+        mu_add_flush_button( __( 'OPcache' ), 'AWSELBOPcacheReset\reset' );
+    }
+
+    if ( is_multisite() ) {
+        if ( function_exists( 'flush_cache_add_network_button' ) ) {
+            flush_cache_add_network_button(
+                __( 'OPcache' ),
+                'AWSELBOPcacheReset\reset'
+            );
+        }
+    } else {
+        if ( function_exists( 'flush_cache_add_button' ) ) {
+            flush_cache_add_button(
+                __( 'OPcache' ),
+                'AWSELBOPcacheReset\reset'
+            );
+        }
     }
 }
 
@@ -146,8 +189,10 @@ function load() {
 }
 
 if ( is_enabled() ) {
-    require_once __DIR__ . '/vendor/autoload.php';
+    if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+        require_once __DIR__ . '/vendor/autoload.php';
+    }
 
-    add_action( 'plugins_loaded', 'AWSELBOPCacheReset\load' );
-    add_action( AWS_ELB_OPCACHE_RESET, 'AWSELBOPCacheReset\reset_instance' );
+    add_action( 'plugins_loaded', 'AWSELBOPcacheReset\load' );
+    add_action( AWS_ELB_OPCACHE_RESET, 'AWSELBOPcacheReset\reset_instance' );
 }
