@@ -2,6 +2,7 @@
     "name": "innocode-digital/wp-reset-opcache-aws-elb",
     "version": "0.3.0",
     "type": "wordpress-muplugin",
+    "license": "GPL-2.0+",
     "require": {
         "php": ">=7.0",
         "ext-zend-opcache": "*",
